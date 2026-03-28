@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+//FALTA CRIAR AS FUNÇÕES DE DEIXAR NEGATIVO E DE LIMIAR COM FATIAMENTO
+
 #define FIFO_PATH "/tmp/imgpipe"
 #define NEGATIVO 0
 #define SLICE 1
