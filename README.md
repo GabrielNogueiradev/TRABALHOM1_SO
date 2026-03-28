@@ -1,6 +1,6 @@
 # Simulador de Sistemas Operacionais
 
-Este repositório contém a implementação de um simulador de SO desenvolvido em C++. O projeto explora conceitos fundamentais como gerenciamento de processos, escalonamento e abstração de hardware.
+Este repositório contém a implementação de um simulador de SO desenvolvido em C. O projeto explora conceitos fundamentais como gerenciamento de processos, escalonamento e abstração de hardware.
 
 ---
 
