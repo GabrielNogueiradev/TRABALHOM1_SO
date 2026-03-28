@@ -1,0 +1,39 @@
+# === Binários e Executáveis (Obrigatório em SO) ===
+# Não suba o simulador ou o escalonador compilado
+programa
+simulador
+a.out
+*.exe
+*.out
+*.app
+
+# === Artefatos de Compilação ===
+# Para não sujar o repo com objetos e o Assembler (g++ -S)
+*.o
+*.obj
+*.s
+
+# === Logs e Saídas de Simulação ===
+# Trabalhos de SO geram muitos textos de teste. 
+# Se você tiver uma pasta 'logs', ignore-a:
+logs/
+*.log
+*.txt
+# (Opcional: se o professor pedir arquivos .txt de entrada, remova a linha acima)
+
+# === Debug e Dumps ===
+# Arquivos gerados por falhas de segmentação (SegFault)
+core
+*.stackdump
+*.dmp
+
+# === Configurações de IDE (Codespaces/VS Code) ===
+.vscode/
+.history/
+.nfs*
+.DS_Store
+
+# === Bibliotecas e Temporários ===
+*.so
+*.dll
+*.lib
