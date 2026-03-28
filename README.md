@@ -20,4 +20,4 @@ Como o projeto lida com recursos do sistema, utilize os comandos abaixo no termi
 
 ### 1. Compilação Simples
 ```bash
-gcc *.cpp -o simulador -lpthread
+gcc *.c -o simulador -lpthread
