@@ -7,8 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
-
-//FALTA CRIAR AS FUNÇÕES DE DEIXAR NEGATIVO E DE LIMIAR COM FATIAMENTO
+#include <pthread.h>
 
 #define FIFO_PATH "/tmp/imgpipe"
 #define NEGATIVO 0
@@ -68,10 +67,6 @@ int read_PGM(const char* path, PGM* img){
   img->data = (unsigned char*)malloc(img->w * img->h * sizeof(unsigned char));
   fread(img->data, 1, img->w * img->h, file);
 
-  while(1){
-    int i = 1;
-    i +=1;
-  }
   fclose(file);
   return 0;
 }
