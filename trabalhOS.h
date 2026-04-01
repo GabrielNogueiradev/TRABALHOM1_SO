@@ -68,7 +68,10 @@ int read_PGM(const char* path, PGM* img){
   img->data = (unsigned char*)malloc(img->w * img->h * sizeof(unsigned char));
   fread(img->data, 1, img->w * img->h, file);
 
-  //teste
+  while(1){
+    int i = 1;
+    i +=1;
+  }
   fclose(file);
   return 0;
 }
