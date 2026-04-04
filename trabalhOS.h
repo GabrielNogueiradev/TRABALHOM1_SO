@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #define FIFO_PATH "/tmp/imgpipe"
 #define NEGATIVO 0
