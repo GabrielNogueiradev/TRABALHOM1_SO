@@ -3,19 +3,22 @@
 int main(int argc, char* argv[]){
   PGM imagem;
   Header cabecalho;
+   // nome da imagem a ser alterada
 
   //um caminho que não muda
-  const char* path = FIFO_PATH;
+  //const char* path = FIFO_PATH;
+  const char* path = argv[1];
+  const  char* nome_arquivo = argv[2];
   mkfifo(path, 0666); //cria a named pipe
 
   //lê e salva a imagem na struct PGM, em imagem.data
-  read_PGM("fisica.pgm", &imagem);
+  read_PGM(nome_arquivo, &imagem);
 
   //prepara o header para enviar para o worker
   cabecalho.w = imagem.w;
   cabecalho.h = imagem.h;
   cabecalho.maxv = imagem.maxv;
-  cabecalho.mode = NEGATIVO;
+  cabecalho.mode = NEGATIVO;  // aqui da par colocar 0, o worker vai sobreescrever 
   cabecalho.t1 = 0;
   cabecalho.t2 = 0;
 
