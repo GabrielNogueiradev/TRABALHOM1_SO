@@ -11,31 +11,31 @@ int prox_tarefa = 0;
 PGM g_imagem;
 Task tarefa[NUM_TASKS];
 int g_mode; // MODE_NEG ou MODE_SLICE
-int g_t1, g_t2;
+int g_t1, g_t2; // t1= limite inferior, t2 = limite superior
 
 void aplicar_negativo(void* arg);
 void aplicar_negativo_sem_thread(Task* tarefa, PGM* imagem);
-void aplicar_fatiamento();
+void aplicar_fatiamento(void* arg);
 void aplicar_fatiamento_sem_therad();
 
 int main(int argc, char* argv[]){
   Header cabecalho;
-  int borda_inferior_fatiamento, borda_superior_fatiamento, modo_trabalho, num_threads;
+  int num_threads;
   char nome[50]; //nome do arquivo
 
   const char* path = argv[1]; //caminho pra fifo
   int modo = atoi(argv[2]); //modo de trabalho, fatiamento=1 ou negativo = 0  
   if(modo == NEGATIVO){
-    modo_trabalho = NEGATIVO;
+    g_mode = NEGATIVO;
     if(argc >=4){
       num_threads= atoi(argv[3]);
     }else{
       num_threads=NUM_THREADS;
     }
   }else if(modo == SLICE){
-    modo_trabalho = SLICE;
-    borda_inferior_fatiamento = atoi(argv[3]);
-    borda_superior_fatiamento = atoi(argv[4]);
+    g_mode = SLICE;
+    g_t1 = atoi(argv[3]);
+    g_t2 = atoi(argv[4]);
     if(argc >=6){
       num_threads = atoi(argv[5]);
     }else{
@@ -63,9 +63,6 @@ int main(int argc, char* argv[]){
   g_imagem.w = cabecalho.w;
   g_imagem.h = cabecalho.h;
   g_imagem.maxv = cabecalho.maxv;
-  cabecalho.mode = modo_trabalho;
-  cabecalho.t1 = borda_inferior_fatiamento;
-  cabecalho.t2 = borda_superior_fatiamento;
   printf("altura: %d\n largura: %d\n maxv: %d\n", g_imagem.h, g_imagem.w, g_imagem.maxv);
 
   g_imagem.data = (unsigned char*)malloc(g_imagem.w * g_imagem.h * sizeof(unsigned char));
@@ -95,10 +92,16 @@ int main(int argc, char* argv[]){
   }
 
   int IDs_threads[num_threads]; 
-  if(cabecalho.mode == NEGATIVO){
+  if(g_mode == NEGATIVO){
     for(int i = 0; i < num_threads; i++){
       IDs_threads[i] = i+1;
       pthread_create(&thread[i], NULL, (void *)aplicar_negativo, &IDs_threads[i]);
+      //aplicar_negativo_sem_thread(&tarefa[i], &g_imagem);
+    }
+  }else{
+    for(int i = 0; i < num_threads; i++){
+      IDs_threads[i] = i+1;
+      pthread_create(&thread[i], NULL, (void *)aplicar_fatiamento, &IDs_threads[i]);
       //aplicar_negativo_sem_thread(&tarefa[i], &g_imagem);
     }
   }
@@ -159,6 +162,36 @@ void aplicar_negativo(void* arg){
       for(int j = 0; j < g_imagem.w; j++){
         int pos = i * g_imagem.w + j;
         g_imagem.data[pos] = 255 - g_imagem.data[pos];
+      }
+    }
+    sem_post(&semaforo); //libera para a proxima tarefa entrar
+  }
+}
+
+void aplicar_fatiamento(void* arg){
+  int thread_id = *(int *)arg;
+  while(1){
+    sem_wait(&semaforo); //trava até ter permissão e so podem ter 4 threads existindo
+
+    pthread_mutex_lock(&mutex);
+      if(prox_tarefa >= NUM_TASKS){ //verifica se tem proxima tarefa se não tiver quebra a thread
+      pthread_mutex_unlock(&mutex);
+      sem_post(&semaforo);
+      break;
+    }
+    int tarefa_id = prox_tarefa++;
+    pthread_mutex_unlock(&mutex);
+
+    printf("Thread: %d, tarefa %d processando linhas %d até %d\n", thread_id, tarefa_id, tarefa[tarefa_id].row_start, tarefa[tarefa_id].row_end);
+
+    for(int i = tarefa[tarefa_id].row_start; i < tarefa[tarefa_id].row_end; i++){
+      for(int j = 0; j < g_imagem.w; j++){
+        int pos = i * g_imagem.w + j;
+        if(g_imagem.data[pos] > g_t2 || g_imagem.data[pos]< g_t1){
+          g_imagem.data[pos] = 0;
+        }else{
+          g_imagem.data[pos]=255;
+        }
       }
     }
     sem_post(&semaforo); //libera para a proxima tarefa entrar
