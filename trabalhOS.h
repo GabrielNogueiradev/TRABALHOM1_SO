@@ -74,7 +74,7 @@ int read_PGM(const char* path, PGM* img){
 
 int write_PGM(const char* path, const PGM* img){
   FILE* file = fopen(path, "wb");
-  fprintf(file, "P5\n%d %d\n %d\n", img->w, img->h, img->maxv);
+  fprintf(file, "P5\n%d %d\n%d\n", img->w, img->h, img->maxv);
 
   fwrite(img->data, 1, img->w * img->h, file);
 
