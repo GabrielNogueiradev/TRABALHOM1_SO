@@ -1,3 +1,5 @@
+//no terminal pra rodar o códogo colocar ./"nome do programa" path(nome pro caminho, precisa ser igual nos dois(worker e sender)) "nome da imagem"
+
 #include "trabalhOS.h"
 
 int main(int argc, char* argv[]){
@@ -27,6 +29,8 @@ int main(int argc, char* argv[]){
   int fd;
   fd = open(path, O_WRONLY);
   printf("Worker conectado. Enviando imagem e cabecalho\n");
+  printf("\n----------------\nAltura: %d\nLargura: %d\nMaxv: %d\n", cabecalho.h, cabecalho.w, cabecalho.maxv);
+
 
   //envia a imagem e o cabecalho para o main_worker.c
   write(fd, &cabecalho, sizeof(Header));
@@ -38,7 +42,9 @@ int main(int argc, char* argv[]){
     tamanho_enviado += n;
   }
 
-  printf("Dados enviados.\n");
+  printf("Imagem enviada: %ld bytes\n----------------\n", tamanho_esperado);
+
+  printf("Dados enviados.\n\n");
 
   close(fd);
   free(imagem.data);
