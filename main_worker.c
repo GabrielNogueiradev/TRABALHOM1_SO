@@ -1,6 +1,6 @@
 #include "trabalhOS.h"
 
-#define NUM_TASKS 8
+#define NUM_TASKS 50
 #define NUM_THREADS 4
 
 sem_t semaforo;
@@ -14,26 +14,23 @@ int g_mode; // MODE_NEG ou MODE_SLICE
 int g_t1, g_t2; // t1= limite inferior, t2 = limite superior
 
 void aplicar_negativo(void* arg);
-void aplicar_negativo_sem_thread(Task* tarefa, PGM* imagem);
 void aplicar_fatiamento(void* arg);
-void aplicar_fatiamento_sem_therad();
 
 int main(int argc, char* argv[]){
   Header cabecalho;
   int num_threads;
-  char nome[50]; //nome do arquivo
+  char nome[50]; //nome do arquivo de saida
+  const char* path;
 
-  const char* path = argv[1]; //caminho pra fifo
-  int modo = atoi(argv[2]); //modo de trabalho, fatiamento=1 ou negativo = 0  
-  if(modo == NEGATIVO){
-    g_mode = NEGATIVO;
+  path = argv[1]; //caminho pra fifo
+  g_mode = atoi(argv[2]); //modo de trabalho, fatiamento=1 ou negativo = 0  
+  if(g_mode == NEGATIVO){
     if(argc >=4){
       num_threads= atoi(argv[3]);
     }else{
       num_threads=NUM_THREADS;
     }
-  }else if(modo == SLICE){
-    g_mode = SLICE;
+  }else if(g_mode == SLICE){
     g_t1 = atoi(argv[3]);
     g_t2 = atoi(argv[4]);
     if(argc >=6){
@@ -42,42 +39,72 @@ int main(int argc, char* argv[]){
       num_threads = NUM_THREADS;
     }
   }else{
+
+    printf("Alguma coisa certamente está errada");
     exit(1);
   }
 
+
+  //pra caso não queira que o path seja passado na hora de executar o arquivo
+  /*
+  path = FIFO_PATH;
+  g_mode = atoi(argv[1]);
+  if(g_mode == NEGATIVO){
+    if(argc == 2){
+      num_threads = NUM_THREADS;
+    }else{
+      num_threads = atoi(argv[3]);
+    }
+  }else if(g_mode == SLICE){
+      g_t1 = atoi(argv[2]);
+      g_t2 = atoi(argv[3]);
+    if(argc==4){
+      num_threads=NUM_THREADS;
+    }
+    else{
+      num_threads=atoi(argv[5]);
+    }
+  }else{
+    printf("Operação não encontrada.\n 0=Negativo\n1=Fatiamento");
+    exit(1);
+  }
+  */
+  
+
   pthread_t thread[num_threads]; //divide as tarefas, se for fatiamento tem q passar o parametro por quando for chamar o programa, se for negativo é o valor setado em NUM_THREADS
 
-    printf("Threadas criadas %d\n", num_threads);
+    printf("Threadas a serem criadas: %d\n\n", num_threads);
 
 
   //abre a fifo
   mkfifo(path, 0666); //cria a named pipe
 
   //recebe os dados enviados pelo sender
-  int fd;
+  int fd;  // file descriptor
   fd = open(path, O_RDONLY);
   printf("Recebendo dados...\n");
 
   read(fd, &cabecalho, sizeof(Header));
-  printf("Cabecalho recebido.\n");
   g_imagem.w = cabecalho.w;
   g_imagem.h = cabecalho.h;
   g_imagem.maxv = cabecalho.maxv;
-  printf("altura: %d\n largura: %d\n maxv: %d\n", g_imagem.h, g_imagem.w, g_imagem.maxv);
+  printf("\n----------------\nAltura: %d\nLargura: %d\nMaxv: %d\n", g_imagem.h, g_imagem.w, g_imagem.maxv);
 
   g_imagem.data = (unsigned char*)malloc(g_imagem.w * g_imagem.h * sizeof(unsigned char));
   size_t tamanho_esperado = g_imagem.w * g_imagem.h;
-  printf("Imagem enviada: %ld bytes\n", tamanho_esperado);
   size_t tamanho_lido = 0;
   while(tamanho_lido < tamanho_esperado){
     size_t n = read(fd, g_imagem.data + tamanho_lido, tamanho_esperado - tamanho_lido);
     tamanho_lido += n;
   }
-  printf("Imagem recebida: %ld bytes\n", tamanho_lido);
+  printf("Imagem recebida: %ld bytes\n----------------\n", tamanho_lido);
+
+  printf("Imagem e cabecalho recebidos.\n\n");
+
 
   close(fd); //terminamos de receber as informações
 
-  sem_init(&semaforo, 0, num_threads); //semaforo para as 4 threads
+  sem_init(&semaforo, 0, num_threads); //semaforo para as threads criadas
 
   int row_por_tarefa = g_imagem.h / NUM_TASKS;
   int sobrou = g_imagem.h % NUM_TASKS; //linhas que sobraram
@@ -91,18 +118,16 @@ int main(int argc, char* argv[]){
     row_atual = tarefa[i].row_end;
   }
 
-  int IDs_threads[num_threads]; 
+  int IDs_threads[num_threads];  // vetor pra identificação das threads. Não é necessário, mas estamos usando pra identificar de uma maneira mais fácil
   if(g_mode == NEGATIVO){
     for(int i = 0; i < num_threads; i++){
       IDs_threads[i] = i+1;
       pthread_create(&thread[i], NULL, (void *)aplicar_negativo, &IDs_threads[i]);
-      //aplicar_negativo_sem_thread(&tarefa[i], &g_imagem);
     }
   }else{
     for(int i = 0; i < num_threads; i++){
       IDs_threads[i] = i+1;
       pthread_create(&thread[i], NULL, (void *)aplicar_fatiamento, &IDs_threads[i]);
-      //aplicar_negativo_sem_thread(&tarefa[i], &g_imagem);
     }
   }
 
@@ -110,29 +135,22 @@ int main(int argc, char* argv[]){
       pthread_join(thread[i], NULL);
 
   }
-  /*
-  pthread_join(thread[0], NULL);
-  pthread_join(thread[1], NULL);
-  pthread_join(thread[2], NULL);
-  pthread_join(thread[3], NULL);
-  */
 
   sem_destroy(&semaforo);
   pthread_mutex_destroy(&mutex);
 
   //Verificação pra caso o arquivo já exista
-  int contador=1, verifica;
+  int contador=1;
+  FILE* teste;
   do{
     snprintf(nome, 50,"saida%d.pgm", contador);
-    verifica= 0;
-    FILE* teste = fopen(nome, "rb");
+      teste = fopen(nome, "rb");
       if(teste != NULL){
         // arquivo existe
         fclose(teste);
         contador++;
-        verifica = 1;
       }
-  }while(verifica ==1);
+  }while(teste !=NULL);
 
   write_PGM(nome, &g_imagem);
 
@@ -197,17 +215,3 @@ void aplicar_fatiamento(void* arg){
     sem_post(&semaforo); //libera para a proxima tarefa entrar
   }
 }
-
-void aplicar_negativo_sem_thread(Task* tarefa, PGM* imagem){
-  int i = tarefa->row_start;
-
-  printf("Processando linhas %d até %d\n", tarefa->row_start, tarefa->row_end);
-
-  for(i; i < tarefa->row_end; i++){
-    for(int j = 0; j < g_imagem.w; j++){
-      int pos = i * g_imagem.w + j;
-      imagem->data[pos] = 255 - imagem->data[pos];
-    }
-  }
-}
-
