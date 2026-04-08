@@ -1,6 +1,13 @@
+//Para compilar o código: gcc -o worker main_worker.c -lpthread
+//Pra rodar o programa, passando o path (operação negativo): /"nome do programa" path(nome pro caminho, precisa ser igual nos dois(worker e sender)) 0 num_threads 
+//Pra rodar o programa, sem passar o path (operação negativo): ./worker 0 num_threads
+//Pra rodar o programa, passando o path (operação fatiamento): /"nome do programa" path(nome pro caminho, precisa ser igual nos dois(worker e sender)) 1 limite_inferior limite_superior num_threads 
+//Pra rodar o programa, sem passar o path (operação fatiamento): /"nome do programa" 1 limite_inferior limite_superior num_threads 
+//num_threads é a quantidade de threads que deseja passar. Se não for informado nenhum valor, ele vai utilizar um predefinido.
+
 #include "trabalhOS.h"
 
-#define NUM_TASKS 50
+#define NUM_TASKS 8
 #define NUM_THREADS 4
 
 sem_t semaforo;
@@ -22,6 +29,8 @@ int main(int argc, char* argv[]){
   char nome[50]; //nome do arquivo de saida
   const char* path;
 
+  //Caso queira passar o path na hora de executar o programa
+  /*
   path = argv[1]; //caminho pra fifo
   g_mode = atoi(argv[2]); //modo de trabalho, fatiamento=1 ou negativo = 0  
   if(g_mode == NEGATIVO){
@@ -43,17 +52,16 @@ int main(int argc, char* argv[]){
     printf("Alguma coisa certamente está errada");
     exit(1);
   }
+  */
 
-
-  //pra caso não queira que o path seja passado na hora de executar o arquivo
-  /*
+  //pra caso não queira que o path seja passado na hora de executar o programa
   path = FIFO_PATH;
   g_mode = atoi(argv[1]);
   if(g_mode == NEGATIVO){
     if(argc == 2){
       num_threads = NUM_THREADS;
     }else{
-      num_threads = atoi(argv[3]);
+      num_threads = atoi(argv[2]);
     }
   }else if(g_mode == SLICE){
       g_t1 = atoi(argv[2]);
@@ -62,18 +70,19 @@ int main(int argc, char* argv[]){
       num_threads=NUM_THREADS;
     }
     else{
-      num_threads=atoi(argv[5]);
+      num_threads=atoi(argv[4]);
     }
   }else{
     printf("Operação não encontrada.\n 0=Negativo\n1=Fatiamento");
     exit(1);
   }
-  */
+    
+
   
 
-  pthread_t thread[num_threads]; //divide as tarefas, se for fatiamento tem q passar o parametro por quando for chamar o programa, se for negativo é o valor setado em NUM_THREADS
+  pthread_t thread[num_threads]; //cria as threads
 
-    printf("Threadas a serem criadas: %d\n\n", num_threads);
+  printf("Threadas a serem criadas: %d\n\n", num_threads);
 
 
   //abre a fifo
@@ -90,7 +99,8 @@ int main(int argc, char* argv[]){
   g_imagem.maxv = cabecalho.maxv;
   printf("\n----------------\nAltura: %d\nLargura: %d\nMaxv: %d\n", g_imagem.h, g_imagem.w, g_imagem.maxv);
 
-  g_imagem.data = (unsigned char*)malloc(g_imagem.w * g_imagem.h * sizeof(unsigned char));
+  g_imagem.data = (unsigned char*)malloc(g_imagem.w * g_imagem.h * sizeof(unsigned char)); // aloca memoria pra receber a imagem
+
   size_t tamanho_esperado = g_imagem.w * g_imagem.h;
   size_t tamanho_lido = 0;
   while(tamanho_lido < tamanho_esperado){
@@ -100,7 +110,6 @@ int main(int argc, char* argv[]){
   printf("Imagem recebida: %ld bytes\n----------------\n", tamanho_lido);
 
   printf("Imagem e cabecalho recebidos.\n\n");
-
 
   close(fd); //terminamos de receber as informações
 
@@ -122,17 +131,17 @@ int main(int argc, char* argv[]){
   if(g_mode == NEGATIVO){
     for(int i = 0; i < num_threads; i++){
       IDs_threads[i] = i+1;
-      pthread_create(&thread[i], NULL, (void *)aplicar_negativo, &IDs_threads[i]);
+      pthread_create(&thread[i], NULL, (void *)aplicar_negativo, &IDs_threads[i]); //inicilia a thread
     }
   }else{
     for(int i = 0; i < num_threads; i++){
       IDs_threads[i] = i+1;
-      pthread_create(&thread[i], NULL, (void *)aplicar_fatiamento, &IDs_threads[i]);
+      pthread_create(&thread[i], NULL, (void *)aplicar_fatiamento, &IDs_threads[i]); //inicilia a thread
     }
   }
 
   for(int i=0; i<num_threads; i++){
-      pthread_join(thread[i], NULL);
+      pthread_join(thread[i], NULL); 
 
   }
 

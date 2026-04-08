@@ -1,16 +1,22 @@
-//no terminal pra rodar o códogo colocar ./"nome do programa" path(nome pro caminho, precisa ser igual nos dois(worker e sender)) "nome da imagem"
+//Para compilar o sender: gcc -o sender main_sender.c -lpthread
+//Pra rodar o códogo, passando o caminho: ./"nome do programa" path(nome pro caminho, precisa ser igual nos dois(worker e sender)) "nome da imagem"
+//Pra rodar o códogo, sem passar o caminho: ./"nome do programa" "nome da imagem"
 
 #include "trabalhOS.h"
 
 int main(int argc, char* argv[]){
   PGM imagem;
   Header cabecalho;
-   // nome da imagem a ser alterada
 
-  //um caminho que não muda
-  //const char* path = FIFO_PATH;
+  //caso não queira passar o caminho
+  const char* path = FIFO_PATH;
+  const  char* nome_arquivo = argv[1];
+
+  /* //pra caso queira passar o caminho no momento de rodar o programa
   const char* path = argv[1];
   const  char* nome_arquivo = argv[2];
+  */
+
   mkfifo(path, 0666); //cria a named pipe
 
   //lê e salva a imagem na struct PGM, em imagem.data
@@ -20,7 +26,7 @@ int main(int argc, char* argv[]){
   cabecalho.w = imagem.w;
   cabecalho.h = imagem.h;
   cabecalho.maxv = imagem.maxv;
-  cabecalho.mode = NEGATIVO;  // aqui da par colocar 0, o worker vai sobreescrever 
+  cabecalho.mode = 0;  // aqui da par colocar 0, o worker vai sobreescrever 
   cabecalho.t1 = 0;
   cabecalho.t2 = 0;
 
